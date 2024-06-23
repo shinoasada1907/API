@@ -1,10 +1,12 @@
 using System.Runtime.CompilerServices;
 using API.DTO.Comment;
+using API.Extensions;
 using API.Interfaces;
 using API.Mapper;
 using API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -18,10 +20,12 @@ namespace API.Controllers
     {
         private readonly ICommentRepository _commentRepository;
         private readonly IStockRepository _stockRepository;
-        public CommentController(ICommentRepository commentRepository, IStockRepository stockRepository)
+        private readonly UserManager<AppUser> _userManager;
+        public CommentController(ICommentRepository commentRepository, IStockRepository stockRepository, UserManager<AppUser> userManager)
         {
             _commentRepository = commentRepository;
             _stockRepository = stockRepository;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -60,7 +64,11 @@ namespace API.Controllers
                 return BadRequest("Stock does not exist");
             }
 
+            var username = User.GetUserName();
+            var appUser = await _userManager.FindByNameAsync(username);
+
             var commentModel = commentDTO.ToCommentFromCreate(stockId);
+            commentModel.AppUserId = appUser.Id;
             await _commentRepository.CreateAsync(commentModel);
             return CreatedAtAction(nameof(GetById), new { id = commentModel.Id }, commentModel.ToCommentDTO());
         }

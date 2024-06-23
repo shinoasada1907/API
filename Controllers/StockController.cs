@@ -26,11 +26,12 @@ namespace API.Controllers
         [Authorize]
         public async Task<IActionResult> GetAll([FromQuery] QueryObject queryObject)
         {
-            // if (!ModelState.IsValid)
-            //     return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
             var stocks = await _stockRepository.GetAllAsync(queryObject);
+            var stockDTO = stocks.Select(x => x.ToStockDTO()).ToList();
 
-            return Ok(stocks);
+            return Ok(stockDTO);
         }
 
         [HttpGet("{id:int}")]
